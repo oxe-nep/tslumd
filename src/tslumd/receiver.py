@@ -70,6 +70,7 @@ class UmdReceiver(Dispatcher):
 
     DEFAULT_HOST: str = '0.0.0.0' #: The default host address to listen on
     DEFAULT_PORT: int = 65000 #: The default host port to listen on
+    DEFAULT_REUSE_PORT: bool = False #: The default reuse port flag
 
     screens: dict[int, Screen]
     """Mapping of :class:`~.Screen` objects by :attr:`~.Screen.index`
@@ -99,9 +100,10 @@ class UmdReceiver(Dispatcher):
         'on_tally_added', 'on_tally_updated', 'on_tally_control',
         'on_screen_added', 'on_scontrol',
     ]
-    def __init__(self, hostaddr: str = DEFAULT_HOST, hostport: int = DEFAULT_PORT):
+    def __init__(self, hostaddr: str = DEFAULT_HOST, hostport: int = DEFAULT_PORT, reuse_port: bool = DEFAULT_REUSE_PORT):
         self.__hostaddr = hostaddr
         self.__hostport = hostport
+        self.__reuse_port = reuse_port
         self.screens = {}
         self.broadcast_screen = Screen(0xffff)
         self._bind_screen(self.broadcast_screen)
@@ -158,7 +160,7 @@ class UmdReceiver(Dispatcher):
             self.transport, self.protocol = await self.loop.create_datagram_endpoint(
                 lambda: UmdProtocol(self),
                 local_addr=(self.hostaddr, self.hostport),
-                reuse_port=True,
+                reuse_port=self.__reuse_port
             )
             await self.connected_evt.wait()
             logger.info('UmdReceiver running')
